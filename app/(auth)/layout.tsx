@@ -1,12 +1,7 @@
-import AcmeLogo from "@/app/ui/acme-logo";
-import LoginForm from "@/app/ui/login-form";
-import { Metadata } from "next";
+import React from "react";
+import AcmeLogo from "../ui/acme-logo";
 
-export const metadata: Metadata = {
-  title: "Login",
-};
-
-export default function LoginPage() {
+const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="flex items-center justify-center md:h-screen">
       <div className="relative mx-auto flex w-full max-w-[400px] flex-col space-y-2.5 p-4 md:-mt-32">
@@ -15,8 +10,10 @@ export default function LoginPage() {
             <AcmeLogo />
           </div>
         </div>
-        <LoginForm />
+        {children}
       </div>
     </main>
   );
-}
+};
+
+export default AuthLayout;

@@ -4,19 +4,30 @@ export const authConfig = {
   providers: [],
   pages: {
     signIn: "/login",
+    newUser: "/register",
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+      const isAuth = !!auth?.user;
+      const isRootPage = nextUrl.pathname.startsWith("/dashboard");
+      const isAuthPage =
+        nextUrl.pathname.startsWith("/login") ||
+        nextUrl.pathname.startsWith("/register");
 
-      if (isOnDashboard) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn) {
-        return Response.redirect(new URL("/dashboard", nextUrl));
+      if (isRootPage) {
+        if (!isAuth) return Response.redirect(new URL("/login", nextUrl));
+
+        return true;
       }
-      return true;
+
+      if (isAuthPage) {
+        console.log(isAuth);
+        if (isAuth) return Response.redirect(new URL("/dashboard", nextUrl));
+
+        return true;
+      }
+
+      if (!isAuth) return Response.redirect(new URL(`/login`, nextUrl));
     },
   },
 } satisfies NextAuthConfig;

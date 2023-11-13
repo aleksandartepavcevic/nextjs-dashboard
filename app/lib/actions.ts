@@ -5,6 +5,8 @@ import { sql } from "@vercel/postgres";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { getUser } from "./data";
+import bcrypt from "bcrypt";
 
 const InvoiceSchema = z.object({
   id: z.string(),
@@ -22,7 +24,7 @@ const InvoiceSchema = z.object({
 
 const CreateInvoice = InvoiceSchema.omit({ id: true, date: true });
 
-export type State = {
+export type InvoiceState = {
   errors?: {
     customerId?: string[];
     amount?: string[];
@@ -31,7 +33,10 @@ export type State = {
   message?: string | null;
 };
 
-export async function createInvoice(prevState: State, formData: FormData) {
+export async function createInvoice(
+  prevState: InvoiceState,
+  formData: FormData
+) {
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get("customerId"),
     amount: formData.get("amount"),
@@ -68,7 +73,7 @@ const UpdateInvoice = InvoiceSchema.omit({ date: true, id: true });
 
 export async function updateInvoice(
   id: string,
-  prevState: State,
+  prevState: InvoiceState,
   formData: FormData
 ) {
   const validatedFields = UpdateInvoice.safeParse({
@@ -125,4 +130,60 @@ export async function authenticate(
     }
     throw error;
   }
+}
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string({
+    invalid_type_error: "Please input your name.",
+  }),
+  email: z
+    .string({ invalid_type_error: "Please input a correct email address." })
+    .email(),
+  password: z.string({ invalid_type_error: "Please input a password." }),
+});
+
+const RegisterUser = UserSchema.omit({ id: true });
+type RegisterState = {
+  errors?: {
+    name?: string[];
+    email?: string[] | "UserAlreadyExists";
+    password?: string[];
+  };
+};
+
+export async function register(
+  prevState: RegisterState | undefined,
+  formData: FormData
+) {
+  const validatedFields = RegisterUser.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!validatedFields.success)
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    } as RegisterState;
+
+  const { email, name, password } = validatedFields.data;
+
+  try {
+    const user = await getUser(email);
+    console.log("user ->", user);
+    if (user)
+      return { errors: { email: "UserAlreadyExists" } } as RegisterState;
+
+    const encryptedPassword = await bcrypt.hash(password, 10);
+
+    await sql`
+      INSERT INTO users (name, email, password)
+      VALUES (${name}, ${email}, ${encryptedPassword});
+      `;
+  } catch (err) {
+    console.log("ERROR ->", err);
+  }
+
+  await authenticate(undefined, formData);
 }
