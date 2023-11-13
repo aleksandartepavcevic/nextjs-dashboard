@@ -25,8 +25,7 @@ export const authConfig = {
 
         return true;
       }
-
-      if (!isAuth) return Response.redirect(new URL(`/login`, nextUrl));
+      return true;
     },
   },
 } satisfies NextAuthConfig;
