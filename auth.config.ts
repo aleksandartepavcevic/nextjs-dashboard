@@ -21,7 +21,6 @@ export const authConfig = {
       }
 
       if (isAuthPage) {
-        console.log(isAuth);
         if (isAuth) return Response.redirect(new URL("/dashboard", nextUrl));
 
         return true;

@@ -171,7 +171,6 @@ export async function register(
 
   try {
     const user = await getUser(email);
-    console.log("user ->", user);
     if (user)
       return { errors: { email: "UserAlreadyExists" } } as RegisterState;
 
